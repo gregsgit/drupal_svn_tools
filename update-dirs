@@ -1,0 +1,43 @@
+#!/bin/sh
+# usage: update-dirs <from-dir> <to-dir>
+#   - given a path to a new version of a module (or core), and a path to existing verion,
+#     1. copy files that are new or changed from new dir. to old dir.
+#        - including creating new directories if necessary
+#     2. note (echo) possibly vestigial files -- that is, files in <to-dir> that do not appear 
+#        in <from-dir>.  (Does not look into .svn directories)
+#
+# example: update-dirs ~/temp/mymodule-6.10 ~/public_html/sites/all/modules/mymodule-6.9
+# set -x
+fromdir=$1
+todir=$2
+for fromfile in `find ${fromdir}`
+do
+  tofile=`echo "${fromfile}" | sed "s%${fromdir}%${todir}%g"`
+  if [ ! -e "${tofile}" ]       # if target does not exist, then copy (or mkdir)
+  then
+      if [ -d ${fromfile} ]     # if source is a dir., do a mkdir
+      then
+	  echo "*** new directory: ${tofile}"
+	  mkdir ${tofile}
+      else
+	  echo "*** new filey: ${tofile}"
+	  cp -p ${fromfile} ${tofile}
+      fi
+  elif [ -z "`diff -bq ${fromfile} ${tofile}`" ]   # if from and to are diff, then copy
+  then
+      echo "** no diff: ${fromfile} ${tofile}"
+  else
+      echo "** updating file: ${tofile}"
+      cp -p ${fromfile} ${tofile}
+  fi
+done
+
+echo "looking for files that may be vestigial..."
+for tofile in `find ${todir} \( -path '*/.svn' -prune \) -or -true `
+do
+  fromfile=`echo "${tofile}" | sed "s%${todir}%${fromdir}%g"`
+  if [ ! -e "$fromfile" ]
+  then
+      echo "${tofile}"
+  fi
+done
