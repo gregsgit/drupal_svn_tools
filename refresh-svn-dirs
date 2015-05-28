@@ -1,0 +1,9 @@
+#!/bin/sh
+svndirs=`find . -name '\.svn' -type d`
+for i in $svndirs
+do
+  newdir=`echo $i | sed 's#\.#/home/laymins/fusnlayministers.org/ccweb/sites/all/modules#'`
+  newdir=`echo $newdir | sed 's#\.svn##'`
+  echo "old = $i, new = $newdir"
+  cp -rp $i $newdir
+done
